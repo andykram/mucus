@@ -11,6 +11,9 @@ spec/reports
 test/tmp
 test/version_tmp
 tmp
+psd
+rel
+.DS_Store
 
 # YARD artifacts
 .yardoc
