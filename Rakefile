@@ -68,6 +68,7 @@ task "clean" do
   mkdir outdir("img")
   mkdir outdir("css")
   mkdir outdir("js")
+  mkdir outdir("html")
 end
 
 task "compile:images" => "clean" do
@@ -98,6 +99,11 @@ end
 task "compile:css:min" => "clean" do
   compile_less do |res|
     res[:out] = YUI::CssCompressor.new.compress(res[:out])
+  end
+end
+
+task "compile:html" => "clean" do
+  Dir[srcdir("html")].each do |src|
   end
 end
 
