@@ -3,6 +3,7 @@ require "closure-compiler"
 require "less"
 require "yui/compressor"
 require "image_optim"
+require "slim"
 
 DOCDIR      = "doc"
 OUTDIR      = "rel"
@@ -102,10 +103,11 @@ task "compile:css:min" => "clean" do
   end
 end
 
-task "compile:html" => "clean" do
-  Dir[srcdir("html")].each do |src|
-  end
-end
+#task "compile:html" => "clean" do
+#  Dir[srcdir("html")].each do |src|
+#    Tilt.new[src].render
+#  end
+#end
 
 task "build" => ["clean", "copy_images", "compile:css:min", "compile:js:min", "compile:images:min"] do
   puts "Ok"
