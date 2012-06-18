@@ -11,7 +11,9 @@ class Mucus.Views.MucusView extends Backbone.View
     super(options)
 
     $parent = $("#dir_wps")
-    @$input = $parent.find("input.wp.kd-input-text").eq(0)
+    $inputs = $parent.find("input.wp.kd-input-text")
+    @$input = $inputs.eq(0)
+    @$other = $inputs.eq(1)
 
   destroy: () =>
     @undelegateEvents()
@@ -20,7 +22,7 @@ class Mucus.Views.MucusView extends Backbone.View
   render: () =>
     @$el.html @template(iconPath: chrome.extension.getURL("img/cl_button.png"))
     @$input.before @$el
-    @$input.width(@$input.width() - @$el.outerWidth() - 10)
+    @$input.width(@$other.width() - @$el.outerWidth() - 10)
 
     return this
 
