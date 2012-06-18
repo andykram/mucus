@@ -2,7 +2,6 @@ Mucus.Views ||= {}
 
 class Mucus.Views.MucusView extends Backbone.View
   template: JST["mucus/templates/location_button"]
-  el: "#mucus-current-location-btn"
   className: "mucus-cl-btn"
 
   events: 
@@ -14,10 +13,14 @@ class Mucus.Views.MucusView extends Backbone.View
     $parent = $("#dir_wps")
     @$input = $parent.find("input.wp.kd-input-text").eq(0)
 
+  destroy: () =>
+    @undelegateEvents()
+    @remove()
+
   render: () =>
-    @$el.html = @template
-      iconPath: chrome.extension.getURL("img/cl_button.png")
-    @$input.prepend @$el
+    @$el.html @template(iconPath: chrome.extension.getURL("img/cl_button.png"))
+    @$input.before @$el
+    @$input.width(@$input.width() - @$el.outerWidth() - 10)
 
     return this
 

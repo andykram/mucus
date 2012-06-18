@@ -1,17 +1,13 @@
-require "coffee-script"
-require "less"
-require "skim"
-require "sprockets"
-require "closure-compiler"
-require "yui/compressor"
-require "image_optim"
+require "bundler/setup"
+DEPENDENCIES = Bundler.require
 
 ROOTDIR = Pathname(File.dirname(__FILE__))
 DOCDIR  = ROOTDIR.join "doc"
 OUTDIR  = ROOTDIR.join "rel"
 SRCDIR  = ROOTDIR.join "src"
 VENDIR  = ROOTDIR.join "vendor"
-BUNDLES = ["application.js", "application.css"]
+BUNDLES = ["application.js", "application.css", "background.html"]
+TYPES   = { "js" => "javascripts", "css" => "stylesheets" }
 
 def dir(root, o={:ext=>"",:dir=>""})
   path = o[:dir] || ""
@@ -36,9 +32,14 @@ def vendir(dir="")
   dir VENDIR, {:dir => dir}
 end
 
+def gemvendir(gem, type=:js)
+  g = gem.to_s
+  t = type.to_s
+  File.join(Gem.loaded_specs[g].full_gem_path, "vendor", "assets", TYPES[t])
+end
+
 def documented
-  [
-  ]
+  []
 end
 
 def sprockets
@@ -59,22 +60,28 @@ task "compress:images" => "clean" do
 end
 
 task "sprockets:setup" => "clean" do
-  Skim::Engine.default_options[:use_asset] = true
+  Skim::Engine.set_default_options :use_asset => true
 
-  [srcdir("css"), srcdir("js"), srcdir("img"), vendir("js")].each do |path|
-    sprockets.append_path path
+  js_paths = [srcdir("js"), vendir("js"), gemvendir("skim", :js)]
+  css_paths = [srcdir("css")]
+  img_paths = [srcdir("img")]
+  html_paths = [srcdir("html")]
+
+  [js_paths, css_paths, img_paths, html_paths].each do |resource_path|
+    resource_path.each do |path|
+      sprockets.append_path path
+    end
   end
 
   sprockets.css_compressor = YUI::CssCompressor.new
-  #sprockets.js_compressor = Closure::Compiler.new
+  sprockets.js_compressor = Closure::Compiler.new
 end
 
 task "sprockets:bundle" => ["clean", "sprockets:setup"] do
   BUNDLES.each do |bundle|
     assets = sprockets.find_asset(bundle)
+    next if !assets
     prefix, basename = assets.pathname.to_s.split('/')[-2..-1]
-
-    puts "Compiling: #{basename}"
 
     mkpath outdir(prefix)
     assets.write_to(outdir(File.join(prefix, basename)))

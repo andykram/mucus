@@ -8,3 +8,4 @@ window.Mucus =
   Collections: {}
   Routers: {}
   Views: {}
+  Instance: null

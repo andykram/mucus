@@ -8,10 +8,13 @@
     "64":  "img/icon_64.png",
     "16":  "img/icon_16.png"
   },
-  "options": "options.html",
+  "web_accessible_resources": [
+    "img/cl_button.png"
+  ],
   "permissions": [
     "http//maps.google.com/*",
-    "geolocation"
+    "geolocation",
+    "background"
   ],
   "content_scripts": [{
     "all_frames": true,
