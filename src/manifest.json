@@ -1,0 +1,29 @@
+{
+  "name": "Mucus",
+  "version": "0.1",
+  "manifest_version": 2,
+  "description": "Adds option to Use Current Location in Google Maps.",
+  "icons": {
+    "128": "img/icon_128.png",
+    "64":  "img/icon_64.png",
+    "16":  "img/icon_16.png"
+  },
+  "options": "options.html",
+  "permissions": [
+    "http//maps.google.com/*",
+    "geolocation"
+  ],
+  "content_scripts": [{
+    "all_frames": true,
+    "css": [
+      "css/application.css"
+    ],
+    "js": [
+      "js/application.js"
+    ],
+    "matches": [
+      "*://maps.google.com/*"
+    ],
+    "run_at": "document_idle"
+  }]
+}

@@ -1,13 +1,17 @@
 require "coffee-script"
-require "closure-compiler"
 require "less"
+require "skim"
+require "sprockets"
+require "closure-compiler"
 require "yui/compressor"
 require "image_optim"
-require "slim"
 
-DOCDIR      = "doc"
-OUTDIR      = "rel"
-SRCDIR      = "src"
+ROOTDIR = Pathname(File.dirname(__FILE__))
+DOCDIR  = ROOTDIR.join "doc"
+OUTDIR  = ROOTDIR.join "rel"
+SRCDIR  = ROOTDIR.join "src"
+VENDIR  = ROOTDIR.join "vendor"
+BUNDLES = ["application.js", "application.css"]
 
 def dir(root, o={:ext=>"",:dir=>""})
   path = o[:dir] || ""
@@ -28,88 +32,57 @@ def srcdir(dir="")
   dir SRCDIR, {:dir => dir}
 end
 
+def vendir(dir="")
+  dir VENDIR, {:dir => dir}
+end
+
 def documented
   [
   ]
 end
 
-def compile_coffeescript(&block)
-  FileList[srcdir("js")].each do |src|
-    res = { :dest => src.gsub(/\.coffee/, ""), :out => "" }
-    File.open(src, "r") { |f| res[:out] = CoffeeScript.compile(f.read) }
-    yield res if block_given?
-    File.open(res[:dest], "w") { |f| f.write(res[:out]) }
-  end
-end
-
-def compile_less(&block)
-  Dir[srcdir("less/*.less")].each do |src|
-    res = {:dest => src.gsub(/\.less/, ""), :out => ""}
-    parser = Less::Parser.new({
-      :paths => [srcdir("less"), srcdir("less/mixins")], :filename => src
-    })
-    File.open(src, "r") do |f|
-      css = parser.parse(f.read)
-      res[:out] = parser.parse.to_css
-    end
-    yield res if block_given?
-    File.open(res[:dest], "w") { |f| f.write(res[:out]) }
-  end
-end
-
-def compile_images(&block)
-
+def sprockets
+  @sprockets ||= Sprockets::Environment.new
 end
 
 task "clean" do
-  puts outdir
   # Recreate directory for a blank slate.
   rm_r  outdir, {:force => true, :secure => true}
   mkdir outdir
-  mkdir outdir("img")
-  mkdir outdir("css")
-  mkdir outdir("js")
-  mkdir outdir("html")
 end
 
-task "compile:images" => "clean" do
+task "compress:images" => "clean" do
   cp_r srcdir("img"), outdir("img")
-end
 
-task "compile:images:min" => ["clean", "compile:images"] do
   io = ImageOptim.new(:pngout => true, :threads => true)
   io.optimize_images!(Dir[outdir("img/*.png")])
 end
 
-task "compile:js" => "clean" do
-  compile_coffeescript
+task "sprockets:setup" => "clean" do
+  Skim::Engine.default_options[:use_asset] = true
+
+  [srcdir("css"), srcdir("js"), srcdir("img"), vendir("js")].each do |path|
+    sprockets.append_path path
+  end
+
+  sprockets.css_compressor = YUI::CssCompressor.new
+  #sprockets.js_compressor = Closure::Compiler.new
 end
 
-task "compile:js:min" => "clean" do
-  compile_coffeescript do |res|
-    res[:out] = Closure::Compiler.new.compile(res[:out], {
-      :compilation_level => "ADVANCED_OPTIMIZATIONS"
-    })
+task "sprockets:bundle" => ["clean", "sprockets:setup"] do
+  BUNDLES.each do |bundle|
+    assets = sprockets.find_asset(bundle)
+    prefix, basename = assets.pathname.to_s.split('/')[-2..-1]
+
+    puts "Compiling: #{basename}"
+
+    mkpath outdir(prefix)
+    assets.write_to(outdir(File.join(prefix, basename)))
   end
 end
 
-task "compile:css" => "clean" do
-  compile_less
-end
-
-task "compile:css:min" => "clean" do
-  compile_less do |res|
-    res[:out] = YUI::CssCompressor.new.compress(res[:out])
-  end
-end
-
-#task "compile:html" => "clean" do
-#  Dir[srcdir("html")].each do |src|
-#    Tilt.new[src].render
-#  end
-#end
-
-task "build" => ["clean", "copy_images", "compile:css:min", "compile:js:min", "compile:images:min"] do
+task "build" => ["clean", "sprockets:setup", "sprockets:bundle", "compress:images"] do
+  cp srcdir("manifest.json"), outdir
   puts "Ok"
 end
 

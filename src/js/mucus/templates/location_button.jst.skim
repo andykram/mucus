@@ -1,0 +1,2 @@
+b.mucus-cl-icon(style="background-image:url('#{@iconPath}');")
+  | &nbsp;
