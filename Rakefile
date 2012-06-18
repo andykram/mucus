@@ -86,6 +86,8 @@ task "build" => ["clean", "sprockets:setup", "sprockets:bundle", "compress:image
   puts "Ok"
 end
 
+task "default" => "build"
+
 task "build:doc" do
   rm_r  docdir, :force => true, :secure => true
   mkdir docdir
